@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emotional Jukebox</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        input[type="text"] {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 300px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        p {
+            color: #555;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    {% csrf_token %}
+    <h1>Emotional Jukebox</h1>
+    <input type="text" id="singerInput" placeholder="Enter your favorite singer"><br>
+    <button id="detectBtn">Suggest songs</button>
+    <p id="emotionLabel"></p>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#detectBtn').click(function() {
+                var csrftoken = $("[name=csrfmiddlewaretoken]").val();
+                var singerName = $('#singerInput').val();
+                $.ajax({
+                    type: 'POST',
+                    url: '{% url "detect_emotion" %}',
+                    data: {
+                        'csrfmiddlewaretoken': csrftoken,
+                        'singer_name': singerName
+                    },
+                    success: function(response) {
+                        if (response.emotion) {
+                            $('#emotionLabel').text('You look ' + response.emotion);
+                            $('#emotionLabel').append('<br>Click on the browser to fix your mood');
+
+                            // Call suggest_song view to get the prompt
+                            $.ajax({
+                                type: 'POST',
+                                url: '{% url "suggest_song" %}',
+                                data: {
+                                    'csrfmiddlewaretoken': csrftoken,
+                                    'singer_name': singerName,
+                                    'emotion': response.emotion
+                                },
+                            });
+                        } else {
+                            $('#emotionLabel').text('');
+                        }
+                    },
+                    error: function(response) {
+                        console.error('Error detecting emotion:', response);
+                        alert('Error detecting emotion. Please try again.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
